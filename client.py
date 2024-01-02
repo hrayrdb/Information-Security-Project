@@ -2,26 +2,19 @@ import socket
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
-# from pgpy import PGPKey, PGPMessage
 import gnupg
 
 # Manual key and IV
 key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?2\xd9\xf2q58\x1e\xc2'
 iv = b'\xce~\x82\xff\x86\tC*{\xa7K\xd5(?\x9e\xfa'
 
-# Load the server's public PGP key
-# with open('server_public_key.asc', 'r') as f:
-#     public_key = PGPKey()
-#     public_key.parse(f.read())
-
-
-
 
 gpg = gnupg.GPG()
 input_data = gpg.gen_key_input(key_type="RSA", key_length=2048)
 key = gpg.gen_key(input_data)
 public_key = key.fingerprint
-private_key = key.get("private_key").decode()
+print(public_key)
+private_key = key.keymaterial.decode()
 
 
 
