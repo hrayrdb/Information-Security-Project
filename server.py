@@ -4,25 +4,19 @@ import re
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
+import pgp_generate
+import pgp_decrypt
 import gnupg
 
-
 # Manual key and IV
-key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?2\xd9\xf2q58\x1e\xc2'
-iv = b'\xce~\x82\xff\x86\tC*{\xa7K\xd5(?\x9e\xfa'
+symmetric_key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?2\xd9\xf2q58\x1e\xc2'
+symmetric_iv = b'\xce~\x82\xff\x86\tC*{\xa7K\xd5(?\x9e\xfa'
 
+session_key=''
+session_iv=''
 
+gpg = gnupg.GPG()  # For python-gnupg
 
-gpg = gnupg.GPG()
-input_data = gpg.gen_key_input(key_type="RSA", key_length=2048)
-key = gpg.gen_key(input_data)
-
-print("key : ", key)
-# Correct way to extract private key:
-private_key = key.keymaterial.decode()
-
-    
-    
 def is_valid_password(password):
     if len(password) < 8:
         return False
@@ -39,11 +33,11 @@ def is_valid_password(password):
 def encrypt(message):
     padder = padding.PKCS7(128).padder()  # 128-bit padding for AES
     padded_data = padder.update(message) + padder.finalize()
-    encryptor = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend()).encryptor()
+    encryptor = Cipher(algorithms.AES(symmetric_key), modes.CBC(symmetric_iv), backend=default_backend()).encryptor()
     return encryptor.update(padded_data) + encryptor.finalize()
 
 def decrypt(ciphertext):
-    decryptor = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend()).decryptor()
+    decryptor = Cipher(algorithms.AES(symmetric_key), modes.CBC(symmetric_iv), backend=default_backend()).decryptor()
     decrypted_data = decryptor.update(ciphertext) + decryptor.finalize()
     unpadder = padding.PKCS7(128).unpadder()  # 128-bit padding for AES
     return unpadder.update(decrypted_data) + unpadder.finalize()
@@ -54,6 +48,7 @@ def main():
     server_socket.listen(5)
     print("Server is listening...")
     accounts = {}
+    pubkey = pgp_generate.generate_key()
 
     while True:
         client_socket, addr = server_socket.accept()
@@ -62,7 +57,7 @@ def main():
 
             request_encrypted = client_socket.recv(1024)
             
-            #
+            
             if not request_encrypted:
                 print("No data received. Closing connection.")
                 break
@@ -71,9 +66,9 @@ def main():
             if request_encrypted == b'':
                 continue
             
-            print(f"ENCRYPTED REQUEST: {request_encrypted}")
+
             request = decrypt(request_encrypted).decode("utf-8")
-            print(f"DECRYPTED REQUEST: {request}")
+
             
             request_parts = request.split(',')
             action = request_parts[0]
@@ -96,6 +91,7 @@ def main():
                 else:
                     accounts[username] = {'password': request_parts[2]}
                     response = "Successful: Account created."
+
                 client_socket.send(response.encode("utf-8"))
                 print(f"Create action processed for {username}")
                 
@@ -113,28 +109,40 @@ def main():
                         phone_number, address = additional_info.split(',',1)
                         accounts[username].update({'phone_number': phone_number, 'address': address})
                         
-                        # Send response for additional info
+
                         response = "Successful: Additional information added."
                         #print(accounts[username])
                         client_socket.send(response.encode("utf-8"))
                         print("Response sent for additional information.")
-                        print("Waiting for project title...")
-                        
-                        ####################################################
-                        # Receive and decrypt project title
-                        encrypted_project_title = client_socket.recv(1024)
-                        # decrypted_message = private_key.decrypt(PGPMessage.from_blob(encrypted_project_title))
-                        # project_title = decrypted_message.message
-                        # print(f"Decrypted project title: {project_title}")
 
-                        # accounts[username]['project_title'] = project_title
+                          #SEND GENERATED KEY TO CLIENT
+                        public_key_data = str(pubkey)
+                        encoded_pubkey = public_key_data.encode("utf-8")
+                        client_socket.send(encoded_pubkey)
+                        print(f"Public key sent to client {username}")   
+
+                        encrypted_session_key = client_socket.recv(1024)
+                        decrypted_session_key = pgp_decrypt.decrypt(encrypted_session_key)
+                        session_key=decrypted_session_key.decode("utf-8")
+
+                        encrypted_session_iv = client_socket.recv(1024)
+                        decrypted_session_iv = pgp_decrypt.decrypt(encrypted_session_iv)
+                        session_iv=decrypted_session_iv.decode("utf-8")
+
+                        response = "Session Key Stored."
+                        client_socket.send(response.encode("utf-8"))
+
+                        print("Waiting for project title...")
+                        encrypted_project_title = client_socket.recv(1024)
+                        decrypted_project_title = decrypt(encrypted_project_title).decode("utf-8")
+                        print('DECRYPTED PROJECT TITLE:' , decrypted_project_title)
                         response = "Successful: Project title received."
                         client_socket.send(response.encode("utf-8"))
-                        print("Response sent for project title.")
-                        ####################################################
-                # else:
-                #     response = "Failed: Invalid credentials."
-                #     client_socket.send(response.encode("utf-8"))
+
+
+                else:
+                    response = "Failed: Invalid credentials."
+                    client_socket.send(response.encode("utf-8"))
                 
             # Handle 'exit' action
             if action == 'exit':

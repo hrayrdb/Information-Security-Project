@@ -2,30 +2,28 @@ import socket
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
-import gnupg
+import symmetric_generate
+import pgp_encrypt
 
 # Manual key and IV
-key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?2\xd9\xf2q58\x1e\xc2'
-iv = b'\xce~\x82\xff\x86\tC*{\xa7K\xd5(?\x9e\xfa'
+symmetric_key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?2\xd9\xf2q58\x1e\xc2'
+symmetric_iv = b'\xce~\x82\xff\x86\tC*{\xa7K\xd5(?\x9e\xfa'
 
 
-gpg = gnupg.GPG()
-input_data = gpg.gen_key_input(key_type="RSA", key_length=2048)
-key = gpg.gen_key(input_data)
-public_key = key.fingerprint
-print(public_key)
-private_key = key.keymaterial.decode()
 
+pubkey = ''
 
+session_key = ''
+session_iv = ''
 
 def encrypt(message):
     padder = padding.PKCS7(128).padder()  # 128-bit padding for AES
     padded_data = padder.update(message) + padder.finalize()
-    encryptor = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend()).encryptor()
+    encryptor = Cipher(algorithms.AES(symmetric_key), modes.CBC(symmetric_iv), backend=default_backend()).encryptor()
     return encryptor.update(padded_data) + encryptor.finalize()
 
 def decrypt(ciphertext):
-    decryptor = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend()).decryptor()
+    decryptor = Cipher(algorithms.AES(symmetric_key), modes.CBC(symmetric_iv), backend=default_backend()).decryptor()
     decrypted_data = decryptor.update(ciphertext) + decryptor.finalize()
     unpadder = padding.PKCS7(128).unpadder()  # 128-bit padding for AES
     return unpadder.update(decrypted_data) + unpadder.finalize()
@@ -62,12 +60,14 @@ def main():
 
             print(response)
 
+
             if response.startswith("Successful: Login"):
                 logged_in = True
             else:
                 continue
 
         else:
+
             phone_number = input("Enter phone number: ")
             address = input("Enter address: ")
 
@@ -81,9 +81,25 @@ def main():
             print(response)
 
             if response.startswith("Successful"):
+                pubkey = client_socket.recv(4096).decode("utf-8")
+                print(pubkey)
+                session_key,session_iv = symmetric_generate.generate_key_iv()
+                str_session_key= str(session_key)
+                str_session_iv= str(session_iv)
+                encrypted_session_key = pgp_encrypt.encrypt(str_session_key.encode("utf-8"))
+                client_socket.send(encrypted_session_key)
+                
+
+                encrypted_session_iv = pgp_encrypt.encrypt(str_session_iv.encode("utf-8"))
+                client_socket.send(encrypted_session_iv)
+                response = client_socket.recv(1024).decode("utf-8")
+                print(response)
+
                 project_title = input("Enter the title of your graduation project: ")
-                # encrypted_message = public_key.encrypt(PGPMessage.new(project_title))
-                # client_socket.send(bytes(str(encrypted_message), 'utf-8'))
+                request= f"{project_title}"
+
+                encrypted_title = encrypt(request.encode("utf-8"))
+                client_socket.send(encrypted_title)
                 print("Sent encrypted project title.")
 
                 # Handle response for project title
