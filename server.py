@@ -48,6 +48,8 @@ def main():
         while True:
 
             request_encrypted = client_socket.recv(1024)
+            if request_encrypted == b'':
+                continue
             print('ENCRYPTED REQUEST: ' , request_encrypted)
             request = decrypt(request_encrypted).decode("utf-8")
             print('REQUEST: ',request)
