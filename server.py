@@ -1,10 +1,10 @@
-import os
+# import os
 import socket
 import re
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
-from pgpy import PGPKey, PGPMessage
+# from pgpy import PGPKey, PGPMessage
 
 
 # Manual key and IV
@@ -12,9 +12,9 @@ key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?
 iv = b'\xce~\x82\xff\x86\tC*{\xa7K\xd5(?\x9e\xfa'
 
 # Load the server's private PGP key
-with open('server_private_key.asc', 'r') as f:
-    private_key = PGPKey()
-    private_key.parse(f.read())
+# with open('server_private_key.asc', 'r') as f:
+#     private_key = PGPKey()
+#     private_key.parse(f.read())
     
 def is_valid_password(password):
     if len(password) < 8:
@@ -116,11 +116,11 @@ def main():
                         ####################################################
                         # Receive and decrypt project title
                         encrypted_project_title = client_socket.recv(1024)
-                        decrypted_message = private_key.decrypt(PGPMessage.from_blob(encrypted_project_title))
-                        project_title = decrypted_message.message
-                        print(f"Decrypted project title: {project_title}")
+                        # decrypted_message = private_key.decrypt(PGPMessage.from_blob(encrypted_project_title))
+                        # project_title = decrypted_message.message
+                        # print(f"Decrypted project title: {project_title}")
 
-                        accounts[username]['project_title'] = project_title
+                        # accounts[username]['project_title'] = project_title
                         response = "Successful: Project title received."
                         client_socket.send(response.encode("utf-8"))
                         print("Response sent for project title.")

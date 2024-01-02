@@ -1,8 +1,8 @@
 from pgpy import PGPKey, PGPUID
+import pgpy
 
 # Generate a new RSA key pair
-key = PGPKey.new(PGPKey.Algo.RSA, 2048)
-
+# key = pgpy.PGPKey.new(PubKeyAlgorithm.RSAEncryptOrSign, 4096)
 # Create a new user ID
 uid = PGPUID.new('Your Name', email='your.email@example.com')
 
