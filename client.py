@@ -3,12 +3,17 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 
+from pgpy import PGPKey, PGPMessage
 import os
 
 # Manual key and IV
 key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?2\xd9\xf2q58\x1e\xc2'
 iv = b'\xce~\x82\xff\x86\tC*{\xa7K\xd5(?\x9e\xfa'
 
+# Load the server's public PGP key
+with open('server_public_key.asc', 'r') as f:
+    public_key = PGPKey()
+    public_key.parse(f.read())
 
 def encrypt(message):
     padder = padding.PKCS7(128).padder()  # 128-bit padding for AES
@@ -45,7 +50,7 @@ def main():
 
             username = input("Enter username: ").lower()
             password = input("Enter password: ")
-
+            
             request = f"{action},{username},{password}"
             encrypted_creds = encrypt(request.encode("utf-8"))
 
@@ -63,16 +68,28 @@ def main():
             phone_number = input("Enter phone number: ")
             address = input("Enter address: ")
 
+             # Send phone number and address first
             request = f"{phone_number},{address}"
             encrypted_info = encrypt(request.encode("utf-8"))
-
             client_socket.send(encrypted_info)
+            
+             # Get response and ask for project title
             response = client_socket.recv(1024).decode("utf-8")
-
             print(response)
 
-            break
+            if response.startswith("Successful"):
+                project_title = input("Enter the title of your graduation project: ")
+                encrypted_message = public_key.encrypt(PGPMessage.new(project_title))
+                client_socket.send(bytes(str(encrypted_message), 'utf-8'))
+                print("Sent encrypted project title.")
 
+                # Handle response for project title
+                response = client_socket.recv(1024).decode("utf-8")
+                print(response)
+                
+            break
+        
+    print("Closing socket.")    
     client_socket.close()
 
 if __name__ == '__main__':
