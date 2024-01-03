@@ -127,6 +127,21 @@ def does_username_exist(username, connection):
         return False
 
 
+# Get User Type    
+def get_user_type(username, connection):
+    try:
+        cursor = connection.cursor()
+        query = "SELECT user_type FROM users WHERE username = %s"
+        cursor.execute(query, (username,))
+        result = cursor.fetchone()
+        cursor.close()
+        if result:
+            return result[0]  # Return the user_type
+        else:
+            return None  # User not found or no user_type
+    except Error as e:
+        print(f"Error while retrieving user type from MySQL: {e}")
+        return None
 
 ##############################################################################################################################################################
 #VALIDATION
@@ -195,44 +210,150 @@ def main():
             else:
                 username = None
 
+##############################################################################################################################################################
+            #Create OLD
 
-            #Create
+            # if action == 'create' and username is not None:
+            #     if username in accounts:
+            #         response = "Failed: Username already exists."
+            #     elif not is_valid_password(request_parts[2]):
+            #         response = "Failed: Password does not meet criteria."
+            #     else:
+            #         accounts[username] = {'password': request_parts[2]}
+            #         response = "Successful: Account created."
 
-            if action == 'create' and username is not None:
-                if username in accounts:
-                    response = "Failed: Username already exists."
-                elif not is_valid_password(request_parts[2]):
-                    response = "Failed: Password does not meet criteria."
+            #     client_socket.send(response.encode("utf-8"))
+            #     print(f"Create action processed for {username}")
+##############################################################################################################################################################
+
+
+            #Create NEW
+            if action == 'create':
+                if len(request_parts) >= 4:
+                    username, password, user_type = request_parts[1:4]
+
+                    # Validate 
+                    if does_username_exist(username, connection):
+                        response = "Failed: Username already exists."        
+
+                    elif user_type not in ['doctor', 'student']:
+                        response = "Failed: Invalid user type."
+
+                    elif not is_valid_password(request_parts[2]):
+                        response = "Failed: Password does not meet criteria."
+
+                    else:
+                        add_user_to_database(username, password, user_type, connection)
+                        response = "Successful: Account created."
                 else:
-                    accounts[username] = {'password': request_parts[2]}
-                    response = "Successful: Account created."
-
+                    response = "Failed: Invalid data."
+                                        
                 client_socket.send(response.encode("utf-8"))
-                print(f"Create action processed for {username}")
-                
-            #Login
+                print(f"Create Action Done for {username}")
 
-            elif action == 'login' and username is not None:
-                if accounts.get(username, {}).get('password') == request_parts[2]:
-                    response = "Successful: Login."
-                    client_socket.send(response.encode("utf-8"))
-                    print(f"Login action processed for {username}")
-                    
-                    # If login successful, handle additional information
-                    if 'Successful: Login' in response:
+##############################################################################################################################################################
+#Login OLD
+
+            # elif action == 'login' and username is not None:
+            #     if accounts.get(username, {}).get('password') == request_parts[2]:
+            #         response = "Successful: Login."
+            #         client_socket.send(response.encode("utf-8"))
+            #         print(f"Login action processed for {username}") 
+
+            #         if 'Successful: Login' in response:
+            #             additional_info_encrypted = client_socket.recv(1024)
+            #             additional_info = decrypt(additional_info_encrypted).decode("utf-8")
+            #             print(f"Received additional info: {additional_info}")
+            #             phone_number, address = additional_info.split(',',1)
+            #             accounts[username].update({'phone_number': phone_number, 'address': address})
+                        
+
+            #             response = "Successful: Additional information added."
+
+            #             client_socket.send(response.encode("utf-8"))
+            #             print("Response sent for additional information.")
+
+
+            #             public_key_data = str(pubkey)
+            #             encoded_pubkey = public_key_data.encode("utf-8")
+            #             client_socket.send(encoded_pubkey)
+            #             print(f"Public key sent to client {username}")   
+
+            #             encrypted_session_key = client_socket.recv(1024)
+            #             decrypted_session_key = pgp_decrypt.decrypt(encrypted_session_key)
+            #             session_key=decrypted_session_key.decode("utf-8")
+
+            #             encrypted_session_iv = client_socket.recv(1024)
+            #             decrypted_session_iv = pgp_decrypt.decrypt(encrypted_session_iv)
+            #             session_iv=decrypted_session_iv.decode("utf-8")
+
+            #             response = "Session Key Stored."
+            #             client_socket.send(response.encode("utf-8"))
+
+            #             print("Waiting for project title...")
+            #             encrypted_project_title = client_socket.recv(1024)
+            #             decrypted_project_title = decrypt(encrypted_project_title).decode("utf-8")
+            #             print('DECRYPTED PROJECT TITLE:' , decrypted_project_title)
+            #             response = "Successful: Project title received."
+            #             client_socket.send(response.encode("utf-8"))
+
+            #             sessioned_grade = client_socket.recv(1024)
+            #             decrypted_grade = decrypt(sessioned_grade).decode("utf-8")
+            #             print("DECRYPTED GRADE:" , decrypted_grade)
+
+            #             hashed_grade_server = hashing.sha256(decrypted_grade)
+            #             print('HASHED GRADE FROM SERVER:' , hashed_grade_server)
+
+
+            #             signed_hashed_grade = client_socket.recv(1024).decode('utf-8')
+            #             print('SIGNED HASHED GRADE SERVER:',signed_hashed_grade)
+
+            #             verification = sign.verify_data(signed_hashed_grade)
+            #             if verification:
+            #                 unsigned_hashed_grade = pgp_decrypt.decrypt(signed_hashed_grade).decode('utf-8')
+            #                 if unsigned_hashed_grade.strip() == hashed_grade_server.strip():        
+            #                     print('DATA INTEGRITY CHECKED')
+            #             else:
+            #                 print('NO DATA INTEGRITY')
+                        
+                        
+            #             print('Done with Data Integrity')
+
+            #     else:
+            #         response = "Failed: Invalid credentials."
+            #         client_socket.send(response.encode("utf-8"))                
+##############################################################################################################################################################
+#Login NEW
+                
+            if action == 'login':
+                if len(request_parts) >= 3:
+                    username, password = request_parts[1:3]
+                    if validate_user_login(username, password, connection):
+                        user_type = get_user_type(username, connection)
+                        if user_type == 'doctor':
+                            response = "Successful: Logged in as a doctor."
+                        elif user_type == 'student':
+                            response = "Successful: Logged in as a student."                     
+                        print(response)
+                        client_socket.send(response.encode("utf-8"))
+                        print(f"Login action processed for {username}")
+
+       
+       
+                    if 'Successful: Logged in as a student.' in response:
                         additional_info_encrypted = client_socket.recv(1024)
                         additional_info = decrypt(additional_info_encrypted).decode("utf-8")
-                        print(f"Received additional info: {additional_info}")
+                        print(f"Received additional info for {username}: {additional_info}")
                         phone_number, address = additional_info.split(',',1)
-                        accounts[username].update({'phone_number': phone_number, 'address': address})
+                        update_user_details(username, phone_number, address, connection)
                         
 
                         response = "Successful: Additional information added."
-                        #print(accounts[username])
+
                         client_socket.send(response.encode("utf-8"))
                         print("Response sent for additional information.")
 
-                          #SEND GENERATED KEY TO CLIENT
+
                         public_key_data = str(pubkey)
                         encoded_pubkey = public_key_data.encode("utf-8")
                         client_socket.send(encoded_pubkey)
@@ -277,10 +398,15 @@ def main():
                         
                         
                         print('Done with Data Integrity')
-                else:
-                    response = "Failed: Invalid credentials."
+               
+                    else:
+                        response = "Failed: Invalid credentials."
+                   
                     client_socket.send(response.encode("utf-8"))
+                    print(response)
                 
+
+#######################################################################################################################################################################
             #Exit
                     
             if action == 'exit':
@@ -293,7 +419,10 @@ def main():
 
         client_socket.close()
         print("Client socket closed.")
-                
+
+    if connection:
+        print("Connection closed.")
+        connection.close()                   
                 
                 
 ##############################################################################################################################################################                   
