@@ -11,15 +11,10 @@ import sign
 symmetric_key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?2\xd9\xf2q58\x1e\xc2'
 symmetric_iv = b'\xce~\x82\xff\x86\tC*{\xa7K\xd5(?\x9e\xfa'
 
-# Public Key from Server
-pubkey_server = ''
-
-# Generate key and IV
-session_key = ''
-session_iv = ''
+# Symmetrical Encryption and Decryption Based on Manual Key and IV ( Task 2 )
 
 def encrypt(message):
-    padder = padding.PKCS7(128).padder()  # 128-bit padding for AES
+    padder = padding.PKCS7(128).padder()  
     padded_data = padder.update(message) + padder.finalize()
     encryptor = Cipher(algorithms.AES(symmetric_key), modes.CBC(symmetric_iv), backend=default_backend()).encryptor()
     return encryptor.update(padded_data) + encryptor.finalize()
@@ -27,8 +22,20 @@ def encrypt(message):
 def decrypt(ciphertext):
     decryptor = Cipher(algorithms.AES(symmetric_key), modes.CBC(symmetric_iv), backend=default_backend()).decryptor()
     decrypted_data = decryptor.update(ciphertext) + decryptor.finalize()
-    unpadder = padding.PKCS7(128).unpadder()  # 128-bit padding for AES
+    unpadder = padding.PKCS7(128).unpadder()  
     return unpadder.update(decrypted_data) + unpadder.finalize()
+
+
+
+# Public Key from Server
+pubkey_server = ''
+
+# Generate key and IV
+session_key = ''
+session_iv = ''
+
+
+
 
 def main():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -73,12 +80,12 @@ def main():
             phone_number = input("Enter phone number: ")
             address = input("Enter address: ")
 
-             # Send phone number and address first
+
             request = f"{phone_number},{address}"
             encrypted_info = encrypt(request.encode("utf-8"))
             client_socket.send(encrypted_info)
             
-             # Get response and ask for project title
+
             response = client_socket.recv(1024).decode("utf-8")
             print(response)
 
@@ -104,7 +111,7 @@ def main():
                 client_socket.send(encrypted_title)
                 print("Sent encrypted project title.")
 
-                # Handle response for project title
+
                 response = client_socket.recv(1024).decode("utf-8")
                 print(response)
 
