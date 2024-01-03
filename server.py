@@ -196,6 +196,8 @@ def main():
                 username = None
 
 
+            #Create
+
             if action == 'create' and username is not None:
                 if username in accounts:
                     response = "Failed: Username already exists."
@@ -208,6 +210,7 @@ def main():
                 client_socket.send(response.encode("utf-8"))
                 print(f"Create action processed for {username}")
                 
+            #Login
 
             elif action == 'login' and username is not None:
                 if accounts.get(username, {}).get('password') == request_parts[2]:
@@ -274,17 +277,19 @@ def main():
                         
                         
                         print('Done with Data Integrity')
-
-
                 else:
                     response = "Failed: Invalid credentials."
                     client_socket.send(response.encode("utf-8"))
                 
-            # Handle 'exit' action
+            #Exit
+                    
             if action == 'exit':
                 client_socket.close()
                 print(f"Socket to client {addr} closed.")
                 break
+
+        
+        #Close the socket 
 
         client_socket.close()
         print("Client socket closed.")
