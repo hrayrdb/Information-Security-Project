@@ -4,15 +4,17 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 import symmetric_generate
 import pgp_encrypt
+import hashing
+import sign
 
 # Manual key and IV
 symmetric_key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?2\xd9\xf2q58\x1e\xc2'
 symmetric_iv = b'\xce~\x82\xff\x86\tC*{\xa7K\xd5(?\x9e\xfa'
 
+# Public Key from Server
+pubkey_server = ''
 
-
-pubkey = ''
-
+# Generate key and IV
 session_key = ''
 session_iv = ''
 
@@ -81,8 +83,8 @@ def main():
             print(response)
 
             if response.startswith("Successful"):
-                pubkey = client_socket.recv(4096).decode("utf-8")
-                print(pubkey)
+                pubkey_server = client_socket.recv(4096).decode("utf-8")
+                print(pubkey_server)
                 session_key,session_iv = symmetric_generate.generate_key_iv()
                 str_session_key= str(session_key)
                 str_session_iv= str(session_iv)
@@ -105,7 +107,21 @@ def main():
                 # Handle response for project title
                 response = client_socket.recv(1024).decode("utf-8")
                 print(response)
-                
+
+                project_grade = input("Enter the grade of your graduation project: ")
+
+                sessioned_grade = encrypt(project_grade.encode("utf-8"))
+                print('SESSIONED CLIENT GRADE:' ,sessioned_grade)
+                client_socket.send(sessioned_grade)
+
+                hashed_grade_client = hashing.sha256(project_grade)
+                signed_hashed_grade = sign.sign_data(hashed_grade_client)
+                print('SIGNED HASHED' , signed_hashed_grade)
+
+                request = f"{signed_hashed_grade}"
+                client_socket.send(request.encode("utf-8"))
+
+
             break
         
     print("Closing socket.")    

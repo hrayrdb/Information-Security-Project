@@ -7,6 +7,8 @@ from cryptography.hazmat.primitives import padding
 import pgp_generate
 import pgp_decrypt
 import gnupg
+import sign
+import hashing
 
 # Manual key and IV
 symmetric_key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?2\xd9\xf2q58\x1e\xc2'
@@ -138,6 +140,28 @@ def main():
                         print('DECRYPTED PROJECT TITLE:' , decrypted_project_title)
                         response = "Successful: Project title received."
                         client_socket.send(response.encode("utf-8"))
+
+                        sessioned_grade = client_socket.recv(1024)
+                        decrypted_grade = decrypt(sessioned_grade).decode("utf-8")
+                        print("DECRYPTED GRADE:" , decrypted_grade)
+
+                        hashed_grade_server = hashing.sha256(decrypted_grade)
+                        print('HASHED GRADE FROM SERVER:' , hashed_grade_server)
+
+
+                        signed_hashed_grade = client_socket.recv(1024).decode('utf-8')
+                        print('SIGNED HASHED GRADE SERVER:',signed_hashed_grade)
+
+                        verification = sign.verify_data(signed_hashed_grade)
+                        if verification:
+                            unsigned_hashed_grade = pgp_decrypt.decrypt(signed_hashed_grade).decode('utf-8')
+                            if unsigned_hashed_grade.strip() == hashed_grade_server.strip():        
+                                print('DATA INTEGRITY CHECKED')
+                        else:
+                            print('NO DATA INTEGRITY')
+                        
+                        
+                        print('Done with Data Integrity')
 
 
                 else:
