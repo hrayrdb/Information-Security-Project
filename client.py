@@ -26,15 +26,12 @@ def decrypt(ciphertext):
     return unpadder.update(decrypted_data) + unpadder.finalize()
 
 
-
 # Public Key from Server
 pubkey_server = ''
 
 # Generate key and IV
 session_key = ''
 session_iv = ''
-
-
 
 
 def main():
