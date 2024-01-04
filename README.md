@@ -1,7 +1,7 @@
-# University of Damascus Server-Client System Project ( Minimalised Example )
+# University Server-Client System Project ( Minimalised Example )
 
 ## Overview
-This project aims to establish a system to connect a server with clients ( students and professors ). It focuses on the Server-Client Model and ensures confidentiality, integrity, and non-repudiation of information.
+This project aims to establish a system to connect a server ( University ) with clients ( students and professors ). It focuses on the Server-Client Model and ensures confidentiality, integrity, and non-repudiation of information.
 It is an assignment in the 5th year's Information Security subject.
 
 ## Features
