@@ -9,10 +9,80 @@ import symmetric_generate
 import pgp_encrypt
 import hashing
 import sign
+import customtkinter as ctk  # If you're using customtkinter for GUI
+# Import your GUI frame classes here
+# from login_frame import LoginFrame
+# from create_account_frame import CreateAccountFrame
+
+# Initialize and connect your client socket
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket.connect(('localhost', 12345))
+##############################################################################################################################################################
+# FOR GUI
+#LOGIN FRAME
+def login(username, password):
+    request = f"login,{username},{password}"
+    encrypted_creds = encrypt(request.encode("utf-8"))
+    client_socket.send(encrypted_creds)
+
+    response = client_socket.recv(1024).decode("utf-8")
+    print(response)  # or handle the response in another way
+
+    if response.startswith("Successful: Logged in as a doctor."):
+        return "doctor"
+    elif response.startswith("Successful: Logged in as a student."):
+        return "student"
+    else:
+        return "failure"
+
+#ADDITIONAL DATA FRAME
+def send_student_info(phone_number, address):
+    request = f"{phone_number},{address}"
+    encrypted_info = encrypt(request.encode("utf-8"))
+    client_socket.send(encrypted_info)
+    response = client_socket.recv(1024).decode("utf-8")
+    return response
+
+#GRAD DATA FRAME
+def send_project_title(project_title):
+    pubkey = client_socket.recv(4096).decode("utf-8")
+    print(pubkey)
+    session_key,session_iv = symmetric_generate.generate_key_iv()
+    str_session_key= str(session_key)
+    str_session_iv= str(session_iv)
+    encrypted_session_key = pgp_encrypt.encrypt(str_session_key.encode("utf-8"))
+    client_socket.send(encrypted_session_key)
+    
+
+    encrypted_session_iv = pgp_encrypt.encrypt(str_session_iv.encode("utf-8"))
+    client_socket.send(encrypted_session_iv)
+    response = client_socket.recv(1024).decode("utf-8")
+    print(response)
+
+    # project_title = input("Enter the title of your graduation project: ")
+    request= f"{project_title}"
+
+    encrypted_title = encrypt(request.encode("utf-8"))
+    client_socket.send(encrypted_title)
+    
+
+    # # Handle response for project title
+    response = client_socket.recv(1024).decode("utf-8")
+    print(response)
+    return response
+
+# Create Account Frame
+def create_account(username, password, user_type):
+    request = f"create,{username},{password},{user_type}"
+    encrypted_request = encrypt(request.encode("utf-8"))
+    client_socket.send(encrypted_request)
+
+    response = client_socket.recv(1024).decode("utf-8")
+    print(response)  # For debugging
+    return response
+
 
 ##############################################################################################################################################################
-
-
 # Manual key and IV
 symmetric_key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?2\xd9\xf2q58\x1e\xc2'
 symmetric_iv = b'\xce~\x82\xff\x86\tC*{\xa7K\xd5(?\x9e\xfa'
@@ -45,8 +115,8 @@ pubkey_server = ''
 #MAIN FUNCTION
 
 def main():
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect(('localhost', 12345))
+    # client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # client_socket.connect(('localhost', 12345))
     logged_in = False
     username = ''
 
@@ -179,39 +249,40 @@ def main():
                 
             # LOGIN 
             if action == 'login':
-
-                username = input("Enter username: ").lower()
-                password = input("Enter password: ")
+                login(username, password)
+                # username = input("Enter username: ").lower()
+                # password = input("Enter password: ")
                 
-                request = f"{action},{username},{password}"
-                encrypted_creds = encrypt(request.encode("utf-8"))
-                client_socket.send(encrypted_creds)
+                # request = f"{action},{username},{password}"
+                # encrypted_creds = encrypt(request.encode("utf-8"))
+                # client_socket.send(encrypted_creds)
 
-                response = client_socket.recv(1024).decode("utf-8")
-                print(response)
+                # response = client_socket.recv(1024).decode("utf-8")
+                # print(response)
 
-                if response.startswith("Successful: Logged in as a doctor."):
-                    logged_in = True
-                    user_type = 'doctor'
-                elif response.startswith("Successful: Logged in as a student."):
-                    logged_in = True
-                    user_type = 'student'
-                else:                    
-                    continue
+                # if response.startswith("Successful: Logged in as a doctor."):
+                #     logged_in = True
+                #     user_type = 'doctor'
+                # elif response.startswith("Successful: Logged in as a student."):
+                #     logged_in = True
+                #     user_type = 'student'
+                # else:                    
+                #     continue
 
         else: 
             
             if user_type=='student':
-                phone_number = input("Enter phone number: ")
-                address = input("Enter address: ")
+                # phone_number = input("Enter phone number: ")
+                # address = input("Enter address: ")
 
                 # Send phone number and address first
-                request = f"{phone_number},{address}"
-                encrypted_info = encrypt(request.encode("utf-8"))
-                client_socket.send(encrypted_info)
+                # send_student_info(phone_number, address)
+                # request = f"{phone_number},{address}"
+                # encrypted_info = encrypt(request.encode("utf-8"))
+                # client_socket.send(encrypted_info)
                 
-                # Get response and ask for project title
-                response = client_socket.recv(1024).decode("utf-8")
+                # # Get response and ask for project title
+                # response = client_socket.recv(1024).decode("utf-8")
                 print(response)
 
                 if response.startswith("Successful"):
@@ -230,19 +301,21 @@ def main():
                     print(response)
 
                     project_title = input("Enter the title of your graduation project: ")
+                    send_project_title(project_title)
                     request= f"{project_title}"
 
                     encrypted_title = encrypt(request.encode("utf-8"))
                     client_socket.send(encrypted_title)
-                    print("Sent encrypted project title.")
+                    
 
-                    # Handle response for project title
+                    # # Handle response for project title
                     response = client_socket.recv(1024).decode("utf-8")
                     print(response)
                     
                 break
             else:
                 print('This is doctor')
+                break
 
 
     print("Closing socket.")    

@@ -326,6 +326,7 @@ def main():
 #Login NEW
                 
             if action == 'login':
+                response = ""
                 if len(request_parts) >= 3:
                     username, password = request_parts[1:3]
                     if validate_user_login(username, password, connection):
@@ -373,9 +374,12 @@ def main():
                         print("Waiting for project title...")
                         encrypted_project_title = client_socket.recv(1024)
                         decrypted_project_title = decrypt(encrypted_project_title).decode("utf-8")
+                        project_title = decrypted_project_title
+                        update_project_title(username, project_title, connection)
                         print('DECRYPTED PROJECT TITLE:' , decrypted_project_title)
                         response = "Successful: Project title received."
                         client_socket.send(response.encode("utf-8"))
+                        
 
                         sessioned_grade = client_socket.recv(1024)
                         decrypted_grade = decrypt(sessioned_grade).decode("utf-8")
@@ -384,7 +388,7 @@ def main():
                         hashed_grade_server = hashing.sha256(decrypted_grade)
                         print('HASHED GRADE FROM SERVER:' , hashed_grade_server)
 
-
+                        print("Waiting for SIGNED")
                         signed_hashed_grade = client_socket.recv(1024).decode('utf-8')
                         print('SIGNED HASHED GRADE SERVER:',signed_hashed_grade)
 
