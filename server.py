@@ -1,6 +1,7 @@
 ################################################################################################################################################################
 #IMPORTS
 
+import os
 import socket
 import re
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -13,7 +14,8 @@ import sign
 import hashing
 import mysql.connector
 from mysql.connector import Error
-
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 ##############################################################################################################################################################
 
 # Manual key and IV
@@ -36,11 +38,21 @@ def decrypt(ciphertext):
 
 
 
-
 # Will be used to store Session Key and IV from the client
 session_key=''
 session_iv=''
 
+def encryptt(message):
+    padder = padding.PKCS7(128).padder()  
+    padded_data = padder.update(message) + padder.finalize()
+    encryptor = Cipher(algorithms.AES(session_key), modes.CBC(session_iv), backend=default_backend()).encryptor()
+    return encryptor.update(padded_data) + encryptor.finalize()
+
+def decryptt(ciphertext):
+    decryptor = Cipher(algorithms.AES(session_key), modes.CBC(session_iv), backend=default_backend()).decryptor()
+    decrypted_data = decryptor.update(ciphertext) + decryptor.finalize()
+    unpadder = padding.PKCS7(128).unpadder() 
+    return unpadder.update(decrypted_data) + unpadder.finalize()
 
 ##############################################################################################################################################################
 #DATABASE
@@ -112,6 +124,16 @@ def update_project_title(username, project_title, connection):
     except Error as e:
         print(f"Error while updating project title in MySQL: {e}")
         
+#Update Public Key
+def update_public_key(username, public_key, connection):
+    try:
+        cursor = connection.cursor()
+        query = "UPDATE users SET public_key = %s WHERE username = %s"
+        cursor.execute(query, (public_key, username))
+        connection.commit()
+        cursor.close()
+    except Error as e:
+        print(f"Error while updating public key in MySQL: {e}")
 
 # Check username exists in database
 def does_username_exist(username, connection):
@@ -211,23 +233,8 @@ def main():
                 username = None
 
 ##############################################################################################################################################################
-            #Create OLD
-
-            # if action == 'create' and username is not None:
-            #     if username in accounts:
-            #         response = "Failed: Username already exists."
-            #     elif not is_valid_password(request_parts[2]):
-            #         response = "Failed: Password does not meet criteria."
-            #     else:
-            #         accounts[username] = {'password': request_parts[2]}
-            #         response = "Successful: Account created."
-
-            #     client_socket.send(response.encode("utf-8"))
-            #     print(f"Create action processed for {username}")
-##############################################################################################################################################################
-
-
-            #Create NEW
+#Create
+                
             if action == 'create':
                 if len(request_parts) >= 4:
                     username, password, user_type = request_parts[1:4]
@@ -251,79 +258,8 @@ def main():
                 client_socket.send(response.encode("utf-8"))
                 print(f"Create Action Done for {username}")
 
-##############################################################################################################################################################
-#Login OLD
-
-            # elif action == 'login' and username is not None:
-            #     if accounts.get(username, {}).get('password') == request_parts[2]:
-            #         response = "Successful: Login."
-            #         client_socket.send(response.encode("utf-8"))
-            #         print(f"Login action processed for {username}") 
-
-            #         if 'Successful: Login' in response:
-            #             additional_info_encrypted = client_socket.recv(1024)
-            #             additional_info = decrypt(additional_info_encrypted).decode("utf-8")
-            #             print(f"Received additional info: {additional_info}")
-            #             phone_number, address = additional_info.split(',',1)
-            #             accounts[username].update({'phone_number': phone_number, 'address': address})
-                        
-
-            #             response = "Successful: Additional information added."
-
-            #             client_socket.send(response.encode("utf-8"))
-            #             print("Response sent for additional information.")
-
-
-            #             public_key_data = str(pubkey)
-            #             encoded_pubkey = public_key_data.encode("utf-8")
-            #             client_socket.send(encoded_pubkey)
-            #             print(f"Public key sent to client {username}")   
-
-            #             encrypted_session_key = client_socket.recv(1024)
-            #             decrypted_session_key = pgp_decrypt.decrypt(encrypted_session_key)
-            #             session_key=decrypted_session_key.decode("utf-8")
-
-            #             encrypted_session_iv = client_socket.recv(1024)
-            #             decrypted_session_iv = pgp_decrypt.decrypt(encrypted_session_iv)
-            #             session_iv=decrypted_session_iv.decode("utf-8")
-
-            #             response = "Session Key Stored."
-            #             client_socket.send(response.encode("utf-8"))
-
-            #             print("Waiting for project title...")
-            #             encrypted_project_title = client_socket.recv(1024)
-            #             decrypted_project_title = decrypt(encrypted_project_title).decode("utf-8")
-            #             print('DECRYPTED PROJECT TITLE:' , decrypted_project_title)
-            #             response = "Successful: Project title received."
-            #             client_socket.send(response.encode("utf-8"))
-
-            #             sessioned_grade = client_socket.recv(1024)
-            #             decrypted_grade = decrypt(sessioned_grade).decode("utf-8")
-            #             print("DECRYPTED GRADE:" , decrypted_grade)
-
-            #             hashed_grade_server = hashing.sha256(decrypted_grade)
-            #             print('HASHED GRADE FROM SERVER:' , hashed_grade_server)
-
-
-            #             signed_hashed_grade = client_socket.recv(1024).decode('utf-8')
-            #             print('SIGNED HASHED GRADE SERVER:',signed_hashed_grade)
-
-            #             verification = sign.verify_data(signed_hashed_grade)
-            #             if verification:
-            #                 unsigned_hashed_grade = pgp_decrypt.decrypt(signed_hashed_grade).decode('utf-8')
-            #                 if unsigned_hashed_grade.strip() == hashed_grade_server.strip():        
-            #                     print('DATA INTEGRITY CHECKED')
-            #             else:
-            #                 print('NO DATA INTEGRITY')
-                        
-                        
-            #             print('Done with Data Integrity')
-
-            #     else:
-            #         response = "Failed: Invalid credentials."
-            #         client_socket.send(response.encode("utf-8"))                
-##############################################################################################################################################################
-#Login NEW
+##############################################################################################################################################################       
+#Login 
                 
             if action == 'login':
                 if len(request_parts) >= 3:
@@ -353,6 +289,7 @@ def main():
 
 
                         public_key_data = str(pubkey)
+                        update_public_key(username,public_key_data,connection)
                         encoded_pubkey = public_key_data.encode("utf-8")
                         client_socket.send(encoded_pubkey)
                         print(f"Public key sent to client {username}")   
@@ -378,26 +315,52 @@ def main():
 
                
                     else:
-                        sessioned_grade = client_socket.recv(1024)
-                        decrypted_grade = decrypt(sessioned_grade).decode("utf-8")
-                        print("DECRYPTED GRADE:" , decrypted_grade)
+                        certificate_file = "signed_client_certificate.pem"
 
-                        hashed_grade_server = hashing.sha256(decrypted_grade)
-                        print('HASHED GRADE FROM SERVER:' , hashed_grade_server)
+                        if os.path.exists(certificate_file):
+                            with open(certificate_file, "rb") as f:
+                                certificate_data = f.read()
+                                certificate = x509.load_pem_x509_certificate(certificate_data, default_backend())
 
-                        signed_hashed_grade = client_socket.recv(1024).decode('utf-8')
-                        print('SIGNED HASHED GRADE CLIENT:',signed_hashed_grade)
 
-                        verification = sign.verify_data(signed_hashed_grade)
-                        if verification:
-                            unsigned_hashed_grade = pgp_decrypt.decrypt(signed_hashed_grade).decode('utf-8')
-                            if unsigned_hashed_grade.strip() == hashed_grade_server.strip():        
-                                print('DATA INTEGRITY TRUE')
-                                break
+                                subject_dn = certificate.subject
+
+
+                                common_name_attr = subject_dn.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
+
+                                # Check if attributes are present before accessing their values
+                                common_name = common_name_attr[0].value if common_name_attr else None
+
+                                print("Common Name (CN):", common_name)
+
+                                if common_name == username:
+                                    public_key_data = str(pubkey)
+                                    update_public_key(username,public_key_data,connection)
+                                    print('Doctor Verified, Waiting for Project Grade: ')
+                                    sessioned_grade = client_socket.recv(1024)
+                                    decrypted_grade = decrypt(sessioned_grade).decode("utf-8")
+                                    print("DECRYPTED GRADE:" , decrypted_grade)
+
+                                    hashed_grade_server = hashing.sha256(decrypted_grade)
+                                    print('HASHED GRADE FROM SERVER:' , hashed_grade_server)
+
+                                    signed_hashed_grade = client_socket.recv(1024).decode('utf-8')
+                                    print('SIGNED HASHED GRADE CLIENT:',signed_hashed_grade)
+
+                                    verification = sign.verify_data(signed_hashed_grade)
+                                    if verification:
+                                        unsigned_hashed_grade = pgp_decrypt.decrypt(signed_hashed_grade).decode('utf-8')
+                                        if unsigned_hashed_grade.strip() == hashed_grade_server.strip():        
+                                            print('DATA INTEGRITY TRUE, SYSTEM IS SECURE')
+                                            break
+                                    else:
+                                        print('NO DATA INTEGRITY')
+                                        break
+
                         else:
-                            print('NO DATA INTEGRITY')
+                            print("Certificate file does not exist, you can't continue")
                             break
-                        
+
                         
                     client_socket.send(response.encode("utf-8"))
                     print(response)
@@ -417,9 +380,9 @@ def main():
         client_socket.close()
         print("Client socket closed.")
 
-    # if connection:
-    #     print("Connection closed.")
-    #     connection.close()                   
+        # if connection:
+        #     print("Connection closed.")
+        #     connection.close()                   
                 
                 
 ##############################################################################################################################################################                   
