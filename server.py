@@ -20,7 +20,6 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 ##############################################################################################################################################################
 
-certificate_file = ''
 # Manual key and IV
 symmetric_key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?2\xd9\xf2q58\x1e\xc2'
 symmetric_iv = b'\xce~\x82\xff\x86\tC*{\xa7K\xd5(?\x9e\xfa'
@@ -268,6 +267,8 @@ def handle_client(client_socket, connection):
        
                     #STUDENT
                     if 'Successful: Logged in as a student.' in response:
+                        certificate_file = ''
+
                         additional_info_encrypted = client_socket.recv(1024)
                         additional_info = decrypt(additional_info_encrypted).decode("utf-8")
                         print(f"Received additional info for {username}: {additional_info}")
