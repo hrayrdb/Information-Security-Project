@@ -273,6 +273,10 @@ def main():
                         print(response)
                         client_socket.send(response.encode("utf-8"))
                         print(f"Login action processed for {username}")
+                    else:
+                        response = "User does not exist."    
+                        client_socket.send(response.encode("utf-8"))             
+                        break
 
        
                     #STUDENT
@@ -364,6 +368,12 @@ def main():
                         
                     client_socket.send(response.encode("utf-8"))
                     print(response)
+                    
+                    if os.path.exists(certificate_file):
+                        os.remove(certificate_file)
+                    else:
+                        print("Certificate file does not exist")
+                    
                 
 
 #######################################################################################################################################################################

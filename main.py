@@ -5,6 +5,8 @@ from login_frame import LoginFrame
 from student_add_info import StudentInfoFrame
 from student_grad_title import ProjectTitleFrame
 from doctor_frame import DoctorMessageFrame
+from doctor_grade import DoctorGradeFrame
+from enter_grade import EnterGradeFrame 
 
 import os
 import platform
@@ -16,14 +18,19 @@ class App(ctk.CTk):
 
         self.title("Client Application")
         self.geometry("700x600")
-
+        
+        self.username = None  # Initialize username attribute
+        self.password = None  # Initialize password attribute
+        
         # Initialize Frames
         self.main_menu_frame = MainMenuFrame(self, self.show_create_account_frame, self.show_login_frame)
         self.create_account_frame = CreateAccountFrame(self, self.show_main_menu)
         self.login_frame = LoginFrame(self, self.show_student_info_frame, self.show_doctor_message_frame, self.show_main_menu)
         self.student_info_frame = StudentInfoFrame(self, self.show_project_title_frame)
         self.project_title_frame = ProjectTitleFrame(self, self.show_main_menu, self.logout)
-        self.doctor_message_frame = DoctorMessageFrame(self, self.logout)
+        self.doctor_message_frame = DoctorMessageFrame(self, self.logout, self.show_doctor_grade_frame)
+        self.doctor_grade_frame = DoctorGradeFrame(self, self.logout, self.show_enter_grade_frame_callback)
+        self.enter_grade_frame = EnterGradeFrame(self, self.username, self.password)
 
         # List of all frames
         self.frames = [self.main_menu_frame, self.create_account_frame, self.login_frame,
@@ -37,8 +44,10 @@ class App(ctk.CTk):
             if frame is not self.main_menu_frame:
                 frame.pack_forget()
                 
-    def login_success(self):
+    def login_success(self, username, password):
         self.logged_in = True
+        self.username = username  # Set the username
+        self.password = password  # Set the password
         print("Login status: " + str(self.logged_in))
         
     def logout(self):
@@ -78,6 +87,12 @@ class App(ctk.CTk):
 
     def show_doctor_message_frame(self):
         self.show_frame(self.doctor_message_frame)
+        
+    def show_doctor_grade_frame(self):
+        self.show_frame(self.doctor_grade_frame)
+    
+    def show_enter_grade_frame_callback(self):
+        self.show_frame(self.enter_grade_frame)
 
 if __name__ == "__main__":
     app = App()

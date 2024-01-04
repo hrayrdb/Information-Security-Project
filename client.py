@@ -78,7 +78,7 @@ def create_account(username, password, user_type):
     print(response)  # For debugging
     return response
 
-# Generate Mat Problem
+# Generate Math Problem
 def generate_math_problem():
     x = random.randint(1, 10)
     problem = f"Solve for x: {x}^2 = ?"
@@ -90,6 +90,10 @@ def verify_math_answer(user_answer, correct_answer):
         return True
     else:
         return False
+    
+# # Generate CSR
+# def generate(username):
+#     csr.generate(username)     
     
 ##############################################################################################################################################################
 # Manual key and IV

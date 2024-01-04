@@ -64,7 +64,7 @@ class LoginFrame(ctk.CTkFrame):
         elif user_type == "student":
             self.response_label.configure(text="Logged in as a student")
             self.show_student_info_callback()  # Navigate to the student info frame
-            self.parent.login_success()  # Notify parent of successful login
+            self.parent.login_success(username, password)  # Notify parent of successful login
         else:
             self.response_label.configure(text="Login failed. Please try again.")
 # Example usage
