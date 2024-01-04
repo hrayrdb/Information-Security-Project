@@ -4,6 +4,7 @@
 import os
 import socket
 import re
+import time
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
@@ -273,7 +274,12 @@ def main():
                         print(response)
                         client_socket.send(response.encode("utf-8"))
                         print(f"Login action processed for {username}")
+                    else:
+                        response = "User does not exist"                     
+                        print(response)
+                        client_socket.send(response.encode("utf-8"))
 
+                        
        
                     #STUDENT
                     if 'Successful: Logged in as a student.' in response:
@@ -315,6 +321,8 @@ def main():
 
                
                     else:
+                        time.sleep(5)
+
                         certificate_file = "signed_client_certificate.pem"
 
                         if os.path.exists(certificate_file):
@@ -336,7 +344,7 @@ def main():
                                 if common_name == username:
                                     public_key_data = str(pubkey)
                                     update_public_key(username,public_key_data,connection)
-                                    print('Doctor Verified, Waiting for Project Grade: ')
+                                    print('Doctor Verified, Waiting for Project Grade:')
                                     sessioned_grade = client_socket.recv(1024)
                                     decrypted_grade = decrypt(sessioned_grade).decode("utf-8")
                                     print("DECRYPTED GRADE:" , decrypted_grade)
@@ -356,6 +364,8 @@ def main():
                                     else:
                                         print('NO DATA INTEGRITY')
                                         break
+                                else:
+                                    ('COMMON NAME NOT SAME')
 
                         else:
                             print("Certificate file does not exist, you can't continue")
@@ -363,6 +373,7 @@ def main():
 
                         
                     client_socket.send(response.encode("utf-8"))
+
                     print(response)
                 
 
@@ -379,6 +390,10 @@ def main():
 
         client_socket.close()
         print("Client socket closed.")
+        if os.path.exists(certificate_file):
+            os.remove(certificate_file)
+        else:
+            print("Certificate file does not exist.")
 
         # if connection:
         #     print("Connection closed.")
