@@ -4,6 +4,7 @@
 import os
 import socket
 import re
+import threading
 import time
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
@@ -19,6 +20,7 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 ##############################################################################################################################################################
 
+certificate_file = ''
 # Manual key and IV
 symmetric_key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?2\xd9\xf2q58\x1e\xc2'
 symmetric_iv = b'\xce~\x82\xff\x86\tC*{\xa7K\xd5(?\x9e\xfa'
@@ -190,27 +192,10 @@ gpg = gnupg.GPG()
 ##############################################################################################################################################################
 #MAIN FUNCTION
 
-def main():
-
-    #Init Server Socket
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('localhost', 12345))
-    server_socket.listen(5)
-    print("Server is listening...")
-
-    #Establish Connection with Database
-    connection = create_database_connection()
-
-
-    #Generate Public Key for Client
+def handle_client(client_socket, connection):
+        #Generate Public Key for Client
     pubkey = pgp_generate.generate_key()
-
-
-
     while True:
-
-        client_socket, addr = server_socket.accept()
-        print(f"Connection established with {addr}")
 
         while True:
 
@@ -346,6 +331,7 @@ def main():
                                     update_public_key(username,public_key_data,connection)
                                     print('Doctor Verified, Waiting for Project Grade:')
                                     sessioned_grade = client_socket.recv(1024)
+                                    print('THIS IS SESSIONED GRADEEEE',sessioned_grade)
                                     decrypted_grade = decrypt(sessioned_grade).decode("utf-8")
                                     print("DECRYPTED GRADE:" , decrypted_grade)
 
@@ -375,6 +361,7 @@ def main():
                     client_socket.send(response.encode("utf-8"))
 
                     print(response)
+                    break
                 
 
 #######################################################################################################################################################################
@@ -382,7 +369,7 @@ def main():
                     
             if action == 'exit':
                 client_socket.close()
-                print(f"Socket to client {addr} closed.")
+                print(f"Socket to client  closed.")
                 break
 
         
@@ -394,6 +381,30 @@ def main():
             os.remove(certificate_file)
         else:
             print("Certificate file does not exist.")
+
+def main():
+
+    #Init Server Socket
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(('localhost', 12345))
+    server_socket.listen(5)
+    print("Server is listening...")
+
+    #Establish Connection with Database
+    connection = create_database_connection()
+
+
+
+
+
+    while True:
+        client_socket, addr = server_socket.accept()
+        print(f"Connection established with {addr}")
+
+        # Start a new thread for each client
+        client_thread = threading.Thread(target=handle_client, args=(client_socket, connection))
+        client_thread.start()
+        
 
         # if connection:
         #     print("Connection closed.")
