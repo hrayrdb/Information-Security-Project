@@ -1,7 +1,7 @@
-# University of Damascus Server-Client System Project
+# University of Damascus Server-Client System Project ( Minimalised Example )
 
 ## Overview
-This project aims to establish a system to connect the University of Damascus's server with students and professors. It focuses on the Server-Client Model and ensures confidentiality, integrity, and non-repudiation of information.
+This project aims to establish a system to connect a server with clients ( students and professors ). It focuses on the Server-Client Model and ensures confidentiality, integrity, and non-repudiation of information.
 
 ## Features
 - **Server-Client Communication**: Uses TCP/IP sockets.
@@ -20,13 +20,4 @@ This project aims to establish a system to connect the University of Damascus's 
 - Knowledge of TCP/IP, PGP, digital signatures, and certificate-based authentication.
 
 ## Installation and Usage
-[Instructions here.]
-
-## Contributing
-[Contribution guidelines here.]
-
-## License
-[License information here.]
-
-## Contact
-[Your contact information here.]
+Install all used packages.
