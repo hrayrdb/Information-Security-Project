@@ -2,6 +2,7 @@
 
 ## Overview
 This project aims to establish a system to connect a server with clients ( students and professors ). It focuses on the Server-Client Model and ensures confidentiality, integrity, and non-repudiation of information.
+It is an assignment in the 5th year's Information Security subject.
 
 ## Features
 - **Server-Client Communication**: Uses TCP/IP sockets.
