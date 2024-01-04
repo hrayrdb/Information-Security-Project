@@ -6,9 +6,9 @@ gpg.encoding = 'utf-8'
 fp = gpg.list_keys(True).fingerprints[0]
 
 
-def sign_data(data):
+def sign_data(data,passphrase):
 
-    signed_data = gpg.sign(data, keyid=fp, passphrase='passphrase')
+    signed_data = gpg.sign(data, keyid=fp, passphrase=passphrase)
     if signed_data.fingerprint:
         print('Data signed successfully.')
         return signed_data

@@ -339,7 +339,7 @@ def main():
                         print(f"Login action processed for {username}")
 
        
-       
+                    #STUDENT
                     if 'Successful: Logged in as a student.' in response:
                         additional_info_encrypted = client_socket.recv(1024)
                         additional_info = decrypt(additional_info_encrypted).decode("utf-8")
@@ -349,9 +349,7 @@ def main():
                         
 
                         response = "Successful: Additional information added."
-
                         client_socket.send(response.encode("utf-8"))
-                        print("Response sent for additional information.")
 
 
                         public_key_data = str(pubkey)
@@ -374,9 +372,12 @@ def main():
                         encrypted_project_title = client_socket.recv(1024)
                         decrypted_project_title = decrypt(encrypted_project_title).decode("utf-8")
                         print('DECRYPTED PROJECT TITLE:' , decrypted_project_title)
-                        response = "Successful: Project title received."
-                        client_socket.send(response.encode("utf-8"))
+                        update_project_title(username,decrypted_project_title,connection)
 
+                        response = "Successful: Project title received."
+
+               
+                    else:
                         sessioned_grade = client_socket.recv(1024)
                         decrypted_grade = decrypt(sessioned_grade).decode("utf-8")
                         print("DECRYPTED GRADE:" , decrypted_grade)
@@ -384,24 +385,20 @@ def main():
                         hashed_grade_server = hashing.sha256(decrypted_grade)
                         print('HASHED GRADE FROM SERVER:' , hashed_grade_server)
 
-
                         signed_hashed_grade = client_socket.recv(1024).decode('utf-8')
-                        print('SIGNED HASHED GRADE SERVER:',signed_hashed_grade)
+                        print('SIGNED HASHED GRADE CLIENT:',signed_hashed_grade)
 
                         verification = sign.verify_data(signed_hashed_grade)
                         if verification:
                             unsigned_hashed_grade = pgp_decrypt.decrypt(signed_hashed_grade).decode('utf-8')
                             if unsigned_hashed_grade.strip() == hashed_grade_server.strip():        
-                                print('DATA INTEGRITY CHECKED')
+                                print('DATA INTEGRITY TRUE')
+                                break
                         else:
                             print('NO DATA INTEGRITY')
+                            break
                         
                         
-                        print('Done with Data Integrity')
-               
-                    else:
-                        response = "Failed: Invalid credentials."
-                   
                     client_socket.send(response.encode("utf-8"))
                     print(response)
                 
@@ -420,9 +417,9 @@ def main():
         client_socket.close()
         print("Client socket closed.")
 
-    if connection:
-        print("Connection closed.")
-        connection.close()                   
+    # if connection:
+    #     print("Connection closed.")
+    #     connection.close()                   
                 
                 
 ##############################################################################################################################################################                   

@@ -22,7 +22,7 @@ def receive_and_sign_csr(client_socket):
     with open("ca_private_key.pem", "rb") as key_file:
         ca_private_key = serialization.load_pem_private_key(
             key_file.read(),
-            password=None,  # No password protection for simplicity
+            password=None,  #للتسهيل
             backend=default_backend()
         )
 
@@ -59,14 +59,14 @@ def receive_and_sign_csr(client_socket):
 
 if __name__ == "__main__":
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('localhost', 12346))  # Use a different port for CA
+    server_socket.bind(('localhost', 12346))  
     server_socket.listen(6)
     print("CA Server is listening...")
 
     client_socket, addr = server_socket.accept()
     print(f"Connection established with {addr}")
 
-    # Receive and sign the client's CSR
+
     receive_and_sign_csr(client_socket)
 
     server_socket.close()

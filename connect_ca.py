@@ -30,7 +30,6 @@ def send_csr_to_ca(csr_filename, ca_host, ca_port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
         client_socket.connect((ca_host, ca_port))
 
-        # Send the CSR file to the CA
         with open(csr_filename, "rb") as csr_file:
             csr_data = csr_file.read()
 
@@ -38,12 +37,11 @@ def send_csr_to_ca(csr_filename, ca_host, ca_port):
         csr_length = len(csr_data).to_bytes(4, byteorder='big')
         client_socket.send(csr_length)
 
-        # Send the CSR data
         client_socket.send(csr_data)
 
-        # Receive and print response from the CA
         response = client_socket.recv(1024).decode("utf-8")
         print(response)
+        return response
 
 def main(name):
     csr_filename = f"{name}_csr.pem"  
@@ -54,7 +52,7 @@ def main(name):
     print(bool)
     
     if bool:
-        send_csr_to_ca(csr_filename, ca_host, ca_port)
+       return send_csr_to_ca(csr_filename, ca_host, ca_port)
     else:
         print('CAN NOT ACCESS')
 

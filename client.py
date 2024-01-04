@@ -9,7 +9,7 @@ import symmetric_generate
 import pgp_encrypt
 import hashing
 import sign
-
+import csr
 ##############################################################################################################################################################
 
 
@@ -242,7 +242,26 @@ def main():
                     
                 break
             else:
-                print('This is doctor')
+                result = csr.generate(username)
+                if result.startswith("Successful: CSR verification and signing complete."):
+                    project_grade = input("Enter the grade of the graduation project for team 10: ")
+
+                    sessioned_grade = encrypt(project_grade.encode("utf-8"))
+                    print('SESSIONED CLIENT GRADE:' ,sessioned_grade)
+                    client_socket.send(sessioned_grade)
+
+                    hashed_grade_client = hashing.sha256(project_grade)
+                    print('HASHED:', hashed_grade_client)
+                    signed_hashed_grade = sign.sign_data(hashed_grade_client,password)
+                    print('SIGNED HASHED' , signed_hashed_grade)
+
+                    request = f"{signed_hashed_grade}"
+                    client_socket.send(request.encode("utf-8"))
+                    break
+                else:
+                    print('NOT VERIFIED WITH CSR')
+                    break
+
 
 
     print("Closing socket.")    

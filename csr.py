@@ -25,9 +25,6 @@ def generate(name):
     with open(f"{name}_csr.pem", "wb") as f:
         f.write(csr.public_bytes(serialization.Encoding.PEM))
 
-    connect_ca.main('George')
+    return connect_ca.main(name)
 
 
-
-if __name__ == '__main__':
-    generate('George')
