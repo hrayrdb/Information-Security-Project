@@ -5,11 +5,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
 import datetime
 
-import random
-
 bool = False
-
-
 
 def receive_and_sign_csr(client_socket):
     # Receive the length of the CSR data
