@@ -308,7 +308,6 @@ def main():
                         print("Waiting for project title...")
                         encrypted_project_title = client_socket.recv(1024)
                         decrypted_project_title = decrypt(encrypted_project_title).decode("utf-8")
-
                         print('DECRYPTED PROJECT TITLE:' , decrypted_project_title)
                         update_project_title(username,decrypted_project_title,connection)
 

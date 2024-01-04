@@ -1,8 +1,20 @@
 import random
 import socket
 
-bool = False 
+bool = False  
+###################################################
+# for GUI
+def generate_math_problem():
+    x = random.randint(1, 10)
+    problem = f"Solve for x: {x}^2 = ?"
+    return problem, x**2
 
+def verify_math_answer(user_answer, correct_answer):
+    if user_answer.isdigit() and int(user_answer) == correct_answer:
+        return True
+    else:
+        return False
+####################################################
 def verify_identity():
     # Generate a simple math problem
     x = random.randint(1, 10)

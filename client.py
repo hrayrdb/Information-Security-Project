@@ -1,6 +1,6 @@
 ################################################################################################################################################################
 #IMPORTS
-
+import random
 import socket
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
@@ -78,7 +78,19 @@ def create_account(username, password, user_type):
     print(response)  # For debugging
     return response
 
+# Generate Mat Problem
+def generate_math_problem():
+    x = random.randint(1, 10)
+    problem = f"Solve for x: {x}^2 = ?"
+    return problem, x**2
 
+# Verify Answer
+def verify_math_answer(user_answer, correct_answer):
+    if user_answer.isdigit() and int(user_answer) == correct_answer:
+        return True
+    else:
+        return False
+    
 ##############################################################################################################################################################
 # Manual key and IV
 symmetric_key = b'%b\xe0s\x92\xa5\x1f\x84\xda\xc1\x8cm\x15\x08\xab/\xe4\x86\x8b?<\xd0\xf2?2\xd9\xf2q58\x1e\xc2'
@@ -124,8 +136,8 @@ pubkey_server = ''
 #MAIN FUNCTION
 
 def main():
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect(('localhost', 12345))
+    # client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # client_socket.connect(('localhost', 12345))
     logged_in = False
     username = ''
 
